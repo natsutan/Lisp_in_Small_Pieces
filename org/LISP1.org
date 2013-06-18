@@ -9,7 +9,7 @@ evalの定義がLispで書かれているという事実は、プログラミン
 の一部でもあることと、コストが小さいことを意味する。
 → Eval大事
 
-* 1.2  Basic Evaluator
+* 1.2 Basic Evaluator
 プログラムの中では自由変数と束縛された変数を区別する。自由変数が含まれ
 ているとき、評価器は自由変数自体の値を知る必要がある。
 
@@ -22,12 +22,41 @@ Lispの重要な特性は、その言語の式によって、プログラムが�
 - 関数適用は、最初の項が適用する関数を表していて、残りがその関数に適
   用する引数を表しているリストで表現される。
 
-
-(define (evaluate exp env)
-  (if (atom? exp)
-      (if (symbol? exp) (lookup exp env) exp)
-      (case (car exp)
+(define (evaluate e env)
+  (if (atom? e)
+      (cond ((symbol? e) (lookup e env))
+            ((or (number? e) (string? e) (char? e) (boolean? e)
+                  (vector? e))
+	    e)
+            (else (wrong "Cannot evaluate" e)) )
+      (case (car e)
          .....
 
+lookupは、環境から変数の値を探す関数、wrong はエラーを処理する関数。
 
+* 1.4 Evaluationg Forms
+** special form についた
+厳密にはformで無くてもspecial formと呼ぶ。
+この本によると、Schemeは、quote if set! lambda の4つ。Common Lispは30以上。
 
+Scheme処理系の言語リファレンスをみていても、全然4つじゃない。
+http://www.gnu.org/software/mit-scheme/documentation/mit-scheme-ref/Special-Forms.html
+http://practical-scheme.net/gauche/man/gauche-refj_26.html#g_t_00e6_009d_00a1_00e4_00bb_00b6_00e5_00bc_008f
+
+Gaucheプログラミング(立読み版)に少し書いてあった。
+http://karetta.jp/article/book/004632/004736/commentList#commentList
+quote if set! lambdaにdefineがあればScheme処理系が作れて、例えばcondを
+マクロで実装しちゃうのか、スペシャルフォーム扱いにするのかは実装次第とい
+うことらしい。
+
+arcは実際にミニマムな基本構文で実装されているとのこと。ふむふむ。
+http://blog.practical-scheme.net/shiro?20080130-arc
+
+** Quote
+S式の元となったM式では、データは()、関数の引数は[]で区別されたいたため、
+Quoteは必要なかった。M式が使われなくなったため、quoteがプログラムとデー
+タを区別するために使われるようになった。
+
+http://en.wikipedia.org/wiki/M-expression
+
+** Alternatives
