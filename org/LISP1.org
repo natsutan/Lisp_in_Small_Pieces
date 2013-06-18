@@ -1,0 +1,33 @@
+Lisp in Small Pieces
+Chapter1 The Basics of Interpretation
+
+* 1.1 Evaluation
+Lispインタープリターの最も本質的な部分はevalである。
+
+** evalの定義
+evalの定義がLispで書かれているという事実は、プログラミング環境が、言語
+の一部でもあることと、コストが小さいことを意味する。
+→ Eval大事
+
+* 1.2  Basic Evaluator
+プログラムの中では自由変数と束縛された変数を区別する。自由変数が含まれ
+ているとき、評価器は自由変数自体の値を知る必要がある。
+
+* 1.3 Evaluating Atoms
+Lispの重要な特性は、その言語の式によって、プログラムが表現されているこ
+とである。しかし、全てのほ表現がある程度のエンコーディングを仮定してい
+るため、我々はプログラムがどのように表現されているかをもっと説明する必
+要がある。表現の基本的な約束は、
+- 変数はシンボルによって表現される
+- 関数適用は、最初の項が適用する関数を表していて、残りがその関数に適
+  用する引数を表しているリストで表現される。
+
+
+(define (evaluate exp env)
+  (if (atom? exp)
+      (if (symbol? exp) (lookup exp env) exp)
+      (case (car exp)
+         .....
+
+
+
