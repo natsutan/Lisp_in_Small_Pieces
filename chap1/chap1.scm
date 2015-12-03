@@ -17,8 +17,10 @@
 
 (define evaluate
   (lambda (e env)
+    (format #t "e ~A~%" e)
+    (flush-all-ports)
     (if (atom? e)
-        (cond [(symbol? e) (lookup e env)]
+        (cond [#?=(symbol? e) #?=(lookup e env)]
               [(or (number? e) (string? e) (char? e) (boolean? e) (vector? e))
                e]
               [else (wrong "cannot evaluate" e)])
@@ -175,5 +177,6 @@
 (defprimitive = = 2)
 
 
-
-
+(print env.global)
+;(print (lookup + env.global))
+;(chap1-scheme-bat '((+ 3 5)))

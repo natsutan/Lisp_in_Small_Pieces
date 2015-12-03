@@ -22,9 +22,9 @@
     (if (atom? e)
         (cond
          [(symbol? e) (car (ref *variable-table* e))]
-         [(or (number? e) (string? e) (char? e) (boolean? e) (vector? e)) #?=e]
+         [(or (number? e) (string? e) (char? e) (boolean? e) (vector? e)) e]
          [else (wrong "cannot evaluate" e)])
-        (case (car #?=e)
+        (case (car e)
           [(quote) (cadr e)]
           [(if) (if (evaluate (cadr e) env)
                     (evaluate (caddr e) env)
@@ -97,7 +97,7 @@
 
 (define invoke
   (lambda (fn args)
-    (if #?=(procedure? fn)
+    (if (procedure? fn)
         (fn args)
         (wrong "Not function" fn))))
 
@@ -160,7 +160,6 @@
          (member s *trace-list*))))
 
 
-
 (define chap1-scheme-bat
   (lambda (args)
     (dolist (s args)
@@ -182,9 +181,6 @@
 (defprimitive = = 2)
 
 ;;; shallow binidng
-
-
-
 (define (s.make-function variables body env)
   (lambda (values)
     (map (lambda (var val) (hash-table-push! *variable-table* var val)) variables values)
@@ -193,21 +189,7 @@
               (hash-table-pop! *variable-table* val))
       result)))
 
-(define-syntax s.lookup
-  (syntax-rules ()
-    ((s.lookup id env)
-     (car (ref *variable-table* (quote id))))))
-
-(define-syntax s.update!
-  (syntax-rules ()
-    ((s.update! id env value)
-     (begin
-       (hash-table-pop! *variable-table* (quote id))
-       (hash-table-push! *variable-table* (quote id) value)))))
-
-
 ;;;;; test
-
 
 (chap1-scheme-bat '((+ 3 5)))
 
@@ -224,8 +206,7 @@
                 (* (fact (- x 1)) x))))
     (fact 5)))
 
-(chap1-scheme-bat
-  '(x))
+
 
 
 
