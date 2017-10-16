@@ -5,7 +5,6 @@
    (lambda (cont)
      (print "found: " elt)
      (cont (cons elt seed)))))
-Å@
 
 (define (find-fold pred? proc seed lis)
   (cond [(null? lis) seed]
