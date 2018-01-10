@@ -1,0 +1,289 @@
+Lisp in Small Pieces
+Chapter1 The Basics of Interpretation
+
+* 1.1 Evaluation
+Lispインタープリターの最も本質的な部分はevalである。
+
+** evalの定義
+evalの定義がLispで書かれているという事実は、プログラミング環境が、言語
+の一部でもあることと、コストが小さいことを意味する。
+→ Eval大事
+
+* 1.2 Basic Evaluator
+プログラムの中では自由変数と束縛された変数を区別する。自由変数が含まれ
+ているとき、評価器は自由変数自体の値を知る必要がある。
+
+* 1.3 Evaluating Atoms
+Lispの重要な特性は、その言語の式によって、プログラムが表現されているこ
+とである。しかし、全てのほ表現がある程度のエンコーディングを仮定してい
+るため、我々はプログラムがどのように表現されているかをもっと説明する必
+要がある。表現の基本的な約束は、
+- 変数はシンボルによって表現される
+- 関数適用は、最初の項が適用する関数を表していて、残りがその関数に適
+  用する引数を表しているリストで表現される。
+
+(define (evaluate e env)
+  (if (atom? e)
+      (cond ((symbol? e) (lookup e env))
+            ((or (number? e) (string? e) (char? e) (boolean? e)
+                  (vector? e))
+	    e)
+            (else (wrong "Cannot evaluate" e)) )
+      (case (car e)
+         .....
+
+lookupは、環境から変数の値を探す関数、wrong はエラーを処理する関数。
+
+* 1.4 Evaluationg Forms
+** special form について
+厳密にはformで無くてもspecial formと呼ぶ。
+この本によると、Schemeは、quote if set! lambda の4つ。Common Lispは30以上。
+
+Scheme処理系の言語リファレンスをみていても、全然4つじゃない。
+http://www.gnu.org/software/mit-scheme/documentation/mit-scheme-ref/Special-Forms.html
+http://practical-scheme.net/gauche/man/gauche-refj_26.html#g_t_00e6_009d_00a1_00e4_00bb_00b6_00e5_00bc_008f
+
+Gaucheプログラミング(立読み版)に少し書いてあった。
+http://karetta.jp/article/book/004632/004736/commentList#commentList
+quote if set! lambdaにdefineがあればScheme処理系が作れて、例えばcondを
+マクロで実装しちゃうのか、スペシャルフォーム扱いにするのかは実装次第とい
+うことらしい。
+
+arcは実際にミニマムな基本構文で実装されているとのこと。ふむふむ。
+http://blog.practical-scheme.net/shiro?20080130-arc
+
+** Quote
+S式の元となったM式では、データは()、関数の引数は[]で区別されたいたため、
+Quoteは必要なかった。しかしM式が使われなくなったため、quoteがプログラムとデー
+タを区別する物になった。
+
+http://en.wikipedia.org/wiki/M-expression
+
+** Alternatives
+ifの話。真偽値のfalseと、空リスト'()と、NILの違いは何かという議論があ
+り、Schemeはfalseと'()は別物（NILとも違う）というスタンスを取った。
+
+** Sequence
+beginやprognの話。beginの戻り値に何を使うかで、この処理系では813を
+返すようにしている。元ネタは<a
+href=http://www.amazon.co.jp/dp/4102140018/>ルパンの813</a>と書いてあ
+るが、笑うところなのだろうか。
+
+beginは(begin α β) ≡ ((lambda () β) α)を使って、lambdaで置き換え
+る事ができる。その部分のコードはこう。
+
+>|scheme|
+(define (eprogn exps env)
+  (if (pair? exps)
+      (if (pair? (cdr exps))
+          (begin (evaluate (car exps) env)
+                 (eprogn (cdr exps) env))
+          (evaluate (car exps) env))
+      empty-begin))
+(define emptye-begin 813)
+||<
+
+Common Lispのprog2の存在意義に疑問を投げかけたら、twitterで解答があり
+ました。ありがとうございます。
+
+
+** Assignment
+代入の話。後でもう一度出てくる。
+>|scheme|
+(case (car e)
+   ((set!) (update! (cadr e) env (evaluate (caddr e) env))) ....
+||<
+
+** Abstraction
+special form のlambda が関数を作る。これも後で.
+
+>|scheme|
+(case (car e)
+   ((lambda) (make-function (cadr e) (cddr e) env)) ...
+||<
+
+** Funtion Application
+この辺も後でと。
+
+
+* 1.5 Representing the Envronment
+環境は変数に値を関連付ける。
+メモリが少ない時代には、値の無い変数は同じ名前のシンボルになる
+autoquoteモードが実装された時もあった。
+
+検索と値の設定(set!)の実装
+>|scheme|
+(define (lookup id env)
+    (if (pair? env)
+        (cadr env)
+        (lookup id (cdr env)))
+    (wrong "No such binding" id))
+
+(define (update! id env value)
+   (if (pair? env)
+        (if (eq? (caar env) id)
+            (begin (set-cdr! (car env) value)
+                   value)
+            (update! id (cdr env) value))
+    (wrong "No such binding" id)))
+||<
+
+環境の初期化。env.initを空リストにする
+>|scheme|
+(define env.init '())
+||<
+
+環境の拡張。
+>|scheme|
+(define (extend env variables values)
+  (cond ((pair? values)
+         (cons (cons (car variables) (car values))
+               (extend env (cdr variable) (cdr values)))
+         (wrong "Too less values"))
+        ((null? valiables)
+         (if (null? values)
+             env
+             (wrong "Too much values")))
+        ((symbol? variables) (cons (cons variables values) env ))))
+||<
+
+* DONE 1.6 Representing Functions
+  CLOSED: [2013-06-20 木 12:16]
+関数の実装には、関数を使うのがよい。最も簡単な実装。
+>|scheme|
+(define (invoke fn args)
+    (if (procedure? fn)
+        (fn args)
+        (wrong "Not a funstion" fn)))
+||<
+練習問題1.7、1.8でさらに詳しくやるっぽい。
+
+関数適用におけるエラーについて
+- 関数の場所(listのcar部分)にある項を評価する
+- その値が関数適応できない値の時、エラーを発生させる
+- 引数を左から右へ評価する
+- 引数の数と、関数のarity(オペランドの個数)の数を比較し、同じなら関数適用を行い、数が違う場合はエラーを発生させる。
+
+最初に引数の数をチェックしてもよい。
+
+** DONE 1.6.1 Dynamic and Lexical Binding
+   CLOSED: [2013-06-20 木 12:16]
+環境に対して、少なくとも２つの重要な点がある。全ての評価は、ある環境下
+で行われ、環境の管理は、評価器が効果的に解決する大事な点である。
+3章ではもっと込み入った構造(unwind-protectなど)を取り扱う。
+
+もう一つはダイナミックバインディングとレキシカルバインディングである。
+レキシカルLispでは、関数は、その変数によって拡張された、定義時の環境で
+評価される。
+ダイナミックLispでは、関数は現在（実行時）の環境を拡張する、つまりアプ
+リケーションの環境で評価される。
+
+最近の流行はレキシカルLispである。しかし、ここからダイナミック言語に未
+来がないと結論付けてはいけない。
+
+変数は、スコープを持っているプログラミングのエントリーである。
+pure schemeでは、たった一つのbinidng フォームlambdaを持つ。
+
+(define (foo x) (list x y))
+(define (bar y) (foo 1991))
+
+lexical Lispの時、fooの中のyはグローバル変数のyを示す。
+
+(define y 0)
+(define (bar 100) (foo 3)) ;; => ((1991 0) (3 0)) in lexical Lisp
+(define (bar 100) (foo 3)) ;; => ((1991 100) (3 0)) in dynamic Lisp
+
+新しいスペシャルフォーム function を導入する。引数はlambda formで、
+closureを作る。つまり、関数と定義時の環境が関係づけられる。
+このクロージャが適用されたとき、現在の環境を拡張するのではなく、定義時
+の環境を拡張する
+
+Common Lispでは、(declare (special x))でダイナミックスコープになる。
+
+** DONE 1.6.2 Deep or Shallow Implemantation
+   CLOSED: [2013-06-20 木 12:16]
+環境をalistで表現した場合、検索(lookuo)のコストはリストの長さに比例す
+る。これをdeep bindingと言う。
+
+http://www.geocities.co.jp/SiliconValley-Bay/9285/ELISP-JA/elisp_147.html
+
+
+
+
+
+* TODO 1.7 Global Environment
+ 初期値やデフォルトで使える関数を、Global environment に追加するマクロ
+
+(define env.global env.init)
+
+(define-syntax definitial 
+  (syntax-rules ()
+    ((definitial name)
+     (begin (set! env.global (cons (cons 'name 'void) env.global))
+            'name ) )
+    ((definitial name value)
+     (begin (set! env.global (cons (cons 'name value) env.global))
+            'name ) ) ) )
+
+(define-syntax defprimitive 
+  (syntax-rules ()
+    ((defprimitive name value arity)
+     (definitial name 
+        (lambda (values) 
+          (if (= arity (length values))
+              (apply value values)       ; The real apply of Scheme
+              (wrong "Incorrect arity"
+                     (list 'name values) ) ) ) ) ) ) )
+
+変数の定義
+(definitial t #t)
+(definitial f the-false-value)
+(definitial nil '())
+
+
+なぜか定義済みの変数。この本によると、これらの名前を定義しておくと、評
+価器をテストするLisperが思いつく名前の約96.037%をカバーするらしい。こ
+の辺がジョークなのかマジなのかわからない。
+
+(definitial x)
+(definitial y)
+(definitial z)
+(definitial a)
+(definitial b)
+(definitial c)
+(definitial k)
+(definitial foo)
+(definitial bar)
+(definitial hux)
+(definitial fib)
+(definitial fact)
+(definitial visit)
+(definitial length)
+(definitial primes)
+
+
+次は、自作処理系の関数を、それを動かすScheme処理系の関数に対応付けてい
+る所。後ろの数字は、引数の個数を示す。
+(defprimitive cons cons 2)
+(defprimitive car car 1)
+(defprimitive cdr cdr 1)
+(defpredicate pair? pair? 1)
+(defpredicate symbol? symbol? 1)
+
+* TODO 1.8 Starting the Interpreter 
+  
+これもよく見る奴ですね。
+
+(define (chapter1-scheme)
+  (define (toplevel)
+     (display (evaluate (read) env.global))
+     (toplevel) )
+  (toplevel) )
+
+
+* TODO 1.9 Conlusions
+
+* TODO 1.10 Exercises
+
+
+

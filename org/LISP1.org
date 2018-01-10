@@ -211,7 +211,8 @@ http://www.geocities.co.jp/SiliconValley-Bay/9285/ELISP-JA/elisp_147.html
 
 
 
-* TODO 1.7 Global Environment
+* DONE 1.7 Global Environment
+  CLOSED: [2018-01-09 火 10:59]
  初期値やデフォルトで使える関数を、Global environment に追加するマクロ
 
 (define env.global env.init)
@@ -270,7 +271,8 @@ http://www.geocities.co.jp/SiliconValley-Bay/9285/ELISP-JA/elisp_147.html
 (defpredicate pair? pair? 1)
 (defpredicate symbol? symbol? 1)
 
-* TODO 1.8 Starting the Interpreter 
+* DONE 1.8 Starting the Interpreter 
+  CLOSED: [2018-01-09 火 10:59]
   
 これもよく見る奴ですね。
 
@@ -281,9 +283,11 @@ http://www.geocities.co.jp/SiliconValley-Bay/9285/ELISP-JA/elisp_147.html
   (toplevel) )
 
 
-* TODO 1.9 Conlusions
+* DONE 1.9 Conlusions
+  CLOSED: [2018-01-09 火 10:59]
 
-* TODO 1.10 Exercises
+* DONE 1.10 Exercises
+  CLOSED: [2018-01-09 火 10:59]
 
 
 
