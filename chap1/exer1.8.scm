@@ -27,11 +27,26 @@
     
 
 
-        
+(define max
+  (lambda x
+    (do ((x (cdr x) (cdr x))
+         (r (car x)
+            (if (> (car x) r) (car x) r)))
+        ((null? x) r))))        
             
 
+(define (my-max a . b)
+  (define (iter b)
+    (if (null? (cdr b)) (car b)
+        (if (> (car b) (cadr b))
+            (iter (cons (car b) (cddr b)))
+            (iter (cdr b)))))
+  (let ((c (iter b)))
+    (if (> a c) a c)))
 
-(my_max 1 2)
+
+(my-max 1 2)
+(my-max 1 2 3)
 
 (pair? '(2 3))
 

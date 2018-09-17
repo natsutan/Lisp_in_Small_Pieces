@@ -1,6 +1,7 @@
 Lips In Small Pieces
 
 chapter1 [[file:LISP1.org]]
+chapter2 file:chap2.org
 
 
 
